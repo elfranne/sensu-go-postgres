@@ -2,7 +2,7 @@
 ![Go Test](https://github.com/scottcupit/sensu-go-postgres/workflows/Go%20Test/badge.svg)
 ![goreleaser](https://github.com/scottcupit/sensu-go-postgres/workflows/goreleaser/badge.svg)
 
-# Sensu Go PostgreSQL
+# Sensu Go PostgreSQL Check and Metrics
 
 ## Table of Contents
 - [Overview](#overview)

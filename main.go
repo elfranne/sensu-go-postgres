@@ -30,9 +30,9 @@ type metric struct {
 var (
 	plugin = Config{
 		PluginConfig: sensu.PluginConfig{
-			Name:     "sensu-go-postgres-metrics",
-			Short:    "Sensu Go Postgres Metrics",
-			Keyspace: "sensu.io/plugins/sensu-go-postgres-metrics/config",
+			Name:     "sensu-go-postgres",
+			Short:    "Sensu Go PostgreSQL Check and Metrics",
+			Keyspace: "sensu.io/plugins/sensu-go-postgres/config",
 		},
 	}
 
