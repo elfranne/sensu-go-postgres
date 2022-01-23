@@ -264,8 +264,21 @@ func (check) Connections() {
 
 // Locks
 func (check) Locks() {
+	// Lock modes
 	getMetricsFromRows("locks." + plugin.DatabaseName + ".", "select mode, count(mode) as count from pg_locks where database = (select oid from pg_database where datname = '" + plugin.DatabaseName + "') group by mode;")
-	getMetric("locks." + plugin.DatabaseName + ".total", "select count(*) from pg_locks where database = (select oid from pg_database where datname = '" + plugin.DatabaseName + "');")
+
+	// Total locks
+	count := 0.0
+	for _, metric := range metrics {
+		point := strings.Split(metric.point, ".")
+		if len(point) > 1 {
+			if point[0] + "." + point[1] == "locks." + plugin.DatabaseName {
+				value, _ := strconv.ParseFloat(metric.value, 64)
+				count += value
+			}
+		}
+	}
+	addMetric("locks." + plugin.DatabaseName + ".total", fmt.Sprintf("%f", count))
 }
 
 // Replication
