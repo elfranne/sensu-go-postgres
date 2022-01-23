@@ -265,6 +265,7 @@ func (check) Connections() {
 // Locks
 func (check) Locks() {
 	getMetricsFromRows("locks." + plugin.DatabaseName + ".", "select mode, count(mode) as count from pg_locks where database = (select oid from pg_database where datname = '" + plugin.DatabaseName + "') group by mode;")
+	getMetric("locks." + plugin.DatabaseName + ".total", "select count(*) from pg_locks where database = (select oid from pg_database where datname = '" + plugin.DatabaseName + "');")
 }
 
 // Replication

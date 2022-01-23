@@ -182,7 +182,7 @@ If you're using an earlier version of sensuctl, you can find the asset on the [B
 type: CheckConfig
 api_version: core/v2
 metadata:
-  name: metrics-sensu-go-postgres
+  name: metrics-postgres
   namespace: default
 spec:
   command: sensu-go-postgres --database {{index .labels "postgres_database" | default "postgres"}} --username {{.labels.postgres_username | default "sensu"}}
@@ -204,7 +204,7 @@ spec:
 type: CheckConfig
 api_version: core/v2
 metadata:
-  name: check-sensu-go-postgres-connections
+  name: check-postgres-connections
   namespace: default
 spec:
   command: sensu-go-postgres --database {{index .labels "postgres_database" | default "postgres"}} --username {{.labels.postgres_username | default "sensu"}} --check connections.{{.labels.postgres_database | default "postgres"}}.total --warning 500 --critical 1000
