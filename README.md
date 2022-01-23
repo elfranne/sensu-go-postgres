@@ -8,8 +8,11 @@
 - [Overview](#overview)
 - [Known issues](#known-issues)
 - [Usage examples](#usage-examples)
+  - [Setup Postgres User](#setup-postgres-user)
+  - [Examples](#examples)
 - [Configuration](#configuration)
   - [Asset registration](#asset-registration)
+  - [Metric definition](#metric-definition)
   - [Check definition](#check-definition)
 - [Installation from source](#installation-from-source)
 - [Additional notes](#additional-notes)
@@ -42,6 +45,7 @@ This is the first release, mainly testing integration into my environment for no
 
 Add this entry to your pg_hba.conf file
 ```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
 local   postgres        sensu                                   peer
 ```
 
@@ -52,33 +56,32 @@ Add this role to your PostgreSQL server
 ```
 CREATE ROLE sensu NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION LOGIN VALID UNTIL 'infinity';
 GRANT CONNECT ON DATABASE postgres TO sensu;
-GRANT USAGE ON SCHEMA public TO sensu;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO sensu;
-GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO sensu;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO sensu;
+GRANT pg_monitor TO sensu;
 ```
 
-### Run example
+### Examples
 
+#### Print all metrics
+
+##### Command
 ```
 sensu-go-postgres --database postgres --username sensu
 ```
 
-### Output example
-
+##### Output
 ```
 HOSTNAME.postgresql.version 12.8 1642027852
-HOSTNAME.postgresql.role 0 1642027852
+HOSTNAME.postgresql.replication.role 0 1642027852
 HOSTNAME.postgresql.replication.type 0 1642027852
-HOSTNAME.postgresql.connections.total 7 1642027852
-HOSTNAME.postgresql.connections.waiting 5 1642027852
-HOSTNAME.postgresql.connections.active 2 1642027852
-HOSTNAME.postgresql.connections.disabled 0 1642027852
-HOSTNAME.postgresql.connections.idle 0 1642027852
-HOSTNAME.postgresql.connections.idle_in_transaction 0 1642027852
-HOSTNAME.postgresql.connections.idle_in_transaction_aborted 0 1642027852
-HOSTNAME.postgresql.connections.fastpath_function_call 0 1642027852
-HOSTNAME.postgresql.postgres.size 8209263 1642027852
+HOSTNAME.postgresql.connections.postgres.total 7 1642027852
+HOSTNAME.postgresql.connections.postgres.waiting 5 1642027852
+HOSTNAME.postgresql.connections.postgres.active 2 1642027852
+HOSTNAME.postgresql.connections.postgres.disabled 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle_in_transaction 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle_in_transaction_aborted 0 1642027852
+HOSTNAME.postgresql.connections.postgres.fastpath_function_call 0 1642027852
+HOSTNAME.postgresql.size.postgres 8209263 1642027852
 HOSTNAME.postgresql.locks.postgres.accesssharelock 1 1642027852
 HOSTNAME.postgresql.bgwriter.checkpoints_timed 42008 1642027852
 HOSTNAME.postgresql.bgwriter.checkpoints_req 327 1642027852
@@ -126,6 +129,38 @@ HOSTNAME.postgresql.statstable.postgres.n_live_tup 0 1642027852
 HOSTNAME.postgresql.statstable.postgres.n_dead_tup 0 1642027852
 ```
 
+#### Print specific metrics
+
+##### Command
+```
+sensu-go-postgres --database postgres --username sensu --metrics connections,locks
+```
+
+##### Output
+```
+HOSTNAME.postgresql.connections.postgres.total 7 1642027852
+HOSTNAME.postgresql.connections.postgres.waiting 5 1642027852
+HOSTNAME.postgresql.connections.postgres.active 2 1642027852
+HOSTNAME.postgresql.connections.postgres.disabled 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle_in_transaction 0 1642027852
+HOSTNAME.postgresql.connections.postgres.idle_in_transaction_aborted 0 1642027852
+HOSTNAME.postgresql.connections.postgres.fastpath_function_call 0 1642027852
+HOSTNAME.postgresql.locks.postgres.accesssharelock 1 1642027852
+```
+
+#### Check specific metric
+
+##### Command
+```
+sensu-go-postgres --database postgres --username sensu --check connections.postgres.total --warning 100 --critical 200
+```
+
+##### Output
+```
+OK: connections.postgres.total = 7.000000
+```
+
 ## Configuration
 
 ### Asset registration
@@ -140,6 +175,28 @@ sensuctl asset add scottcupit/sensu-go-postgres
 
 If you're using an earlier version of sensuctl, you can find the asset on the [Bonsai Asset Index][https://bonsai.sensu.io/assets/scottcupit/sensu-go-postgres].
 
+### Metric definition
+
+```yml
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: metrics-sensu-go-postgres
+  namespace: default
+spec:
+  command: sensu-go-postgres --database {{index .labels "postgres_database" | default "postgres"}} --username {{.labels.postgres_username | default "sensu"}}
+  interval: 30
+  output_metric_format: graphite_plaintext
+  output_metric_handlers:
+  - graphite
+  publish: true
+  subscriptions:
+  - postgres
+  runtime_assets:
+  - scottcupit/sensu-go-postgres
+```
+
 ### Check definition
 
 ```yml
@@ -147,11 +204,11 @@ If you're using an earlier version of sensuctl, you can find the asset on the [B
 type: CheckConfig
 api_version: core/v2
 metadata:
-  name: sensu-go-postgres
+  name: check-sensu-go-postgres-connections
   namespace: default
 spec:
-  command: sensu-go-postgres --database {{index .labels "postgres_database" | default "postgres"}} --username {{.labels.postgres_username | default "sensu"}}
-  interval: 30
+  command: sensu-go-postgres --database {{index .labels "postgres_database" | default "postgres"}} --username {{.labels.postgres_username | default "sensu"}} --check connections.{{.labels.postgres_database | default "postgres"}}.total --warning 500 --critical 1000
+  interval: 60
   output_metric_format: graphite_plaintext
   output_metric_handlers:
   - graphite
@@ -175,6 +232,23 @@ go build
 ```
 
 ## Additional notes
+
+### Replication statistics
+
+#### Role
+```
+0 = Standalone
+1 = Master/Publisher
+2 = Slave/Subscriber
+```
+
+#### Replication Type
+```
+0 = None
+1 = WAL
+2 = Streaming
+3 = Logical
+```
 
 ## Contributing
 
