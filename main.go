@@ -103,7 +103,7 @@ var (
 			Env:       "USER_NAME",
 			Argument:  "username",
 			Shorthand: "u",
-			Default:   "postgres",
+			Default:   "sensu",
 			Usage:     "Postgres user to gather metrics",
 			Value:     &plugin.UserName,
 		},
@@ -420,8 +420,8 @@ func getMetricsFromRows(pointbase string, query string) {
 	result, err := runQuery(query)
 	if err == nil {
 		for _, row := range strings.Split(result, "\n") {
-			newlock := strings.Split(string(row), "|")
-			addMetric(strings.ToLower(pointbase + newlock[0]), newlock[1])
+			newrow := strings.Split(string(row), "|")
+			addMetric(strings.ToLower(pointbase + newrow[0]), newrow[1])
 		}
 	}
 }
