@@ -12,6 +12,9 @@ import (
 
 	"github.com/sensu-community/sensu-plugin-sdk/sensu"
 	"github.com/sensu/sensu-go/types"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Config represents the check plugin config.
@@ -170,6 +173,7 @@ func executeCheck(event *types.Event) (int, error) {
 		log.Println("     --username", plugin.UserName)
 	}
 
+	caser := cases.Title(language.Und)
 	checks := reflect.ValueOf(check{})
 
 	// Run check on a single metric
@@ -180,14 +184,9 @@ func executeCheck(event *types.Event) (int, error) {
 			log.Println("     --critical", fmt.Sprintf("%f", plugin.Critical))
 		}
 
-		// Use reflection to dynamicaly call the requested check and get metrics
 		check := strings.Split(plugin.Check, ".")[0]
-		function := checks.MethodByName(strings.Title(check))
-		if function.Kind() != reflect.Func {
-			return sensu.CheckStateWarning, fmt.Errorf("point not supported: %s", check)
-		}
-		if plugin.Debug { log.Println("check:", check) }
-		function.Call(nil)
+		response, error := reflectCheck(checks, caser.String(check))
+		if error != nil { return response, error }
 
 		// Extract desired metric
 		check_found := false
@@ -202,15 +201,15 @@ func executeCheck(event *types.Event) (int, error) {
 		// Determine check state
 		if check_found {
 			switch {
-			case check_current >= plugin.Critical:
-				fmt.Printf("CRITICAL: %s = %f\n", plugin.Check, check_current)
-				return sensu.CheckStateCritical, nil
-			case check_current >= plugin.Warning:
-				fmt.Printf("WARNING: %s = %f\n", plugin.Check, check_current)
-				return sensu.CheckStateWarning, nil
-			default:
-				fmt.Printf("OK: %s = %f\n", plugin.Check, check_current)
-				return sensu.CheckStateOK, nil
+				case check_current >= plugin.Critical:
+					fmt.Printf("CRITICAL: %s = %f\n", plugin.Check, check_current)
+					return sensu.CheckStateCritical, nil
+				case check_current >= plugin.Warning:
+					fmt.Printf("WARNING: %s = %f\n", plugin.Check, check_current)
+					return sensu.CheckStateWarning, nil
+				default:
+					fmt.Printf("OK: %s = %f\n", plugin.Check, check_current)
+					return sensu.CheckStateOK, nil
 			}
 		}
 
@@ -220,21 +219,27 @@ func executeCheck(event *types.Event) (int, error) {
 
 	// Run multiple checks/metrics
 	if plugin.Debug { log.Println("     --metrics:", plugin.Metrics) }
-
-	// Use reflection to dynamicaly call the requested checks/metrics
 	for _, point := range plugin.Metrics {
-		function := checks.MethodByName(strings.Title(point))
-		if function.Kind() != reflect.Func {
-			return sensu.CheckStateWarning, fmt.Errorf("point not supported: %s", point)
-		}
-		if plugin.Debug { log.Println("check:", point) }
-		function.Call(nil)
+		response, error := reflectCheck(checks, caser.String(point))
+		if error != nil { return response, error }
 	}
 
 	metric_count := printMetrics(hostname + ".postgresql.")
 	if metric_count == 0 {
 		return sensu.CheckStateWarning, fmt.Errorf("No metrics found")
 	}
+
+	return sensu.CheckStateOK, nil
+}
+
+// Use reflection to dynamicaly call the requested checks/metrics
+func reflectCheck(checks reflect.Value, funcName string) (int, error) {
+	function := checks.MethodByName(funcName)
+	if function.Kind() != reflect.Func {
+		return sensu.CheckStateWarning, fmt.Errorf("point not supported: %s", funcName)
+	}
+	if plugin.Debug { log.Println("check:", funcName) }
+	function.Call(nil)
 
 	return sensu.CheckStateOK, nil
 }
