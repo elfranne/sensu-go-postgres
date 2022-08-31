@@ -305,7 +305,7 @@ func (check) Replication() {
 
 	//  - Streaming & WAL Shipping Replication Delay
 	if pg_recovery_mode {
-		getMetric("replication.delay", "select (extract(epoch from (now()-pg_last_xact_replay_timestamp()))*1000)::int as replication_delay;")
+		getMetric("replication.delay", "select (extract(epoch from (now()-pg_last_xact_replay_timestamp()))*1000)::bigint as replication_delay;")
 	}
 
 	if postgres_version == 0 { check{}.Version() }
