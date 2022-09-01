@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sensu-community/sensu-plugin-sdk/sensu"
-	"github.com/sensu/sensu-go/types"
+	corev2 "github.com/sensu/sensu-go/api/core/v2"
+	"github.com/sensu/sensu-plugin-sdk/sensu"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -24,7 +24,8 @@ type Config struct {
 	Critical float64
 	Debug bool
 	DatabaseName string
-	Metrics []string
+	MetricsArray []string
+	MetricsString string
 	UserName string
 	Warning float64
 }
@@ -55,8 +56,8 @@ var (
 		},
 	}
 
-	options = []*sensu.PluginConfigOption{
-		&sensu.PluginConfigOption{
+	options = []sensu.ConfigOption{
+		&sensu.PluginConfigOption[string]{
 			Path:      "check",
 			Env:       "Check",
 			Argument:  "check",
@@ -65,7 +66,7 @@ var (
 			Usage:     "Run check for a specific metric",
 			Value:     &plugin.Check,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[float64]{
 			Path:      "critical",
 			Env:       "Critical",
 			Argument:  "critical",
@@ -74,7 +75,7 @@ var (
 			Usage:     "Critical threshold for specific metric check",
 			Value:     &plugin.Critical,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[bool]{
 			Path:      "debug",
 			Env:       "DEBUG",
 			Argument:  "debug",
@@ -83,7 +84,7 @@ var (
 			Usage:     "Print debug log messages",
 			Value:     &plugin.Debug,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[string]{
 			Path:      "database",
 			Env:       "DATABASE_NAME",
 			Argument:  "database",
@@ -92,16 +93,16 @@ var (
 			Usage:     "Database to collect metrics",
 			Value:     &plugin.DatabaseName,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[string]{
 			Path:      "metrics",
 			Env:       "METRICS",
 			Argument:  "metrics",
 			Shorthand: "m",
-			Default:   points,
+			Default:   arrayToString(points),
 			Usage:     "Metrics to check",
-			Value:     &plugin.Metrics,
+			Value:     &plugin.MetricsString,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[string]{
 			Path:      "username",
 			Env:       "USER_NAME",
 			Argument:  "username",
@@ -110,7 +111,7 @@ var (
 			Usage:     "Postgres user to gather metrics",
 			Value:     &plugin.UserName,
 		},
-		&sensu.PluginConfigOption{
+		&sensu.PluginConfigOption[float64]{
 			Path:      "warning",
 			Env:       "Warning",
 			Argument:  "warning",
@@ -139,12 +140,12 @@ func main() {
 	check.Execute()
 }
 
-func checkArgs(event *types.Event) (int, error) {
+func checkArgs(event *corev2.Event) (int, error) {
 	if len(plugin.DatabaseName) == 0 {
 		return sensu.CheckStateWarning, fmt.Errorf("--database or DATABASE_NAME environment variable is required")
 	}
 	if len(plugin.Check) > 0 {
-		plugin.Metrics = []string{}
+		plugin.MetricsArray = []string{}
 		if plugin.Critical <= plugin.Warning {
 			return sensu.CheckStateWarning, fmt.Errorf("--critical threshold must be larger than --warning threshold")
 		}
@@ -152,8 +153,11 @@ func checkArgs(event *types.Event) (int, error) {
 			return sensu.CheckStateWarning, fmt.Errorf("--check is not supported: %s", plugin.Check)
 		}
 	}
-	if len(plugin.Metrics) > 0 {
-		for _, metric := range plugin.Metrics {
+	if plugin.MetricsString != "" {
+		plugin.MetricsArray = arrayFromString(plugin.MetricsString)
+	}
+	if len(plugin.MetricsArray) > 0 {
+		for _, metric := range plugin.MetricsArray {
 			if ! arrayContains(metric, points) {
 				return sensu.CheckStateWarning, fmt.Errorf("--metrics not supported: %s", metric)
 			}
@@ -166,7 +170,7 @@ func checkArgs(event *types.Event) (int, error) {
 	return sensu.CheckStateOK, nil
 }
 
-func executeCheck(event *types.Event) (int, error) {
+func executeCheck(event *corev2.Event) (int, error) {
 	if plugin.Debug {
 		log.Println("executing sensu-go-postgres with:")
 		log.Println("     --database", plugin.DatabaseName)
@@ -213,13 +217,13 @@ func executeCheck(event *types.Event) (int, error) {
 			}
 		}
 
-		_ = printMetrics("")
- 		return sensu.CheckStateWarning, fmt.Errorf("point not found: %s", check)
+		if plugin.Debug { _ = printMetrics("") }
+ 		return sensu.CheckStateWarning, fmt.Errorf("point not found: %s", plugin.Check)
 	}
 
 	// Run multiple checks/metrics
-	if plugin.Debug { log.Println("     --metrics:", plugin.Metrics) }
-	for _, point := range plugin.Metrics {
+	if plugin.Debug { log.Println("     --metrics:", plugin.MetricsArray) }
+	for _, point := range plugin.MetricsArray {
 		response, error := reflectCheck(checks, caser.String(point))
 		if error != nil { return response, error }
 	}
@@ -389,6 +393,19 @@ func arrayContains(criteria string, search []string) (bool) {
 	return false
 }
 
+func arrayFromString(stringText string) ([]string) {
+	stringArray := strings.Split(stringText, ",")
+	for i := range stringArray {
+    	stringArray[i] = strings.TrimSpace(stringArray[i])
+    }
+
+	return stringArray
+}
+
+func arrayToString(stringArray []string) (string) {
+	return strings.Join(stringArray, ",")
+}
+
 func getHostName() (string) {
 	if plugin.Debug { log.Println("get hostname") }
 
@@ -443,7 +460,7 @@ func printMetrics(basestring string) (int) {
 	count := 0
 	for _, metric := range metrics {
 	    fmt.Println(basestring + metric.point, metric.value, timestamp)
-			count += 1
+		count += 1
 	}
 
 	return count
