@@ -1,6 +1,6 @@
-[![Sensu Bonsai Asset](https://img.shields.io/badge/Bonsai-Download%20Me-brightgreen.svg?colorB=89C967&logo=sensu)](https://bonsai.sensu.io/assets/scottcupit/sensu-go-postgres)
-![Go Test](https://github.com/scottcupit/sensu-go-postgres/workflows/Go%20Test/badge.svg)
-![goreleaser](https://github.com/scottcupit/sensu-go-postgres/workflows/goreleaser/badge.svg)
+[![Sensu Bonsai Asset](https://img.shields.io/badge/Bonsai-Download%20Me-brightgreen.svg?colorB=89C967&logo=sensu)](https://bonsai.sensu.io/assets/elfranne/sensu-go-postgres)
+![Go Test](https://github.com/elfranne/sensu-go-postgres/workflows/Go%20Test/badge.svg)
+![goreleaser](https://github.com/elfranne/sensu-go-postgres/workflows/goreleaser/badge.svg)
 
 # Sensu Go PostgreSQL Check and Metrics
 
@@ -170,10 +170,10 @@ consider doing so! If you're using sensuctl 5.13 with Sensu Backend 5.13 or late
 following command to add the asset:
 
 ```
-sensuctl asset add scottcupit/sensu-go-postgres
+sensuctl asset add elfranne/sensu-go-postgres
 ```
 
-If you're using an earlier version of sensuctl, you can find the asset on the [Bonsai Asset Index][https://bonsai.sensu.io/assets/scottcupit/sensu-go-postgres].
+If you're using an earlier version of sensuctl, you can find the asset on the [Bonsai Asset Index][https://bonsai.sensu.io/assets/elfranne/sensu-go-postgres].
 
 ### Metric definition
 
@@ -194,7 +194,7 @@ spec:
   subscriptions:
   - postgres
   runtime_assets:
-  - scottcupit/sensu-go-postgres
+  - elfranne/sensu-go-postgres
 ```
 
 ### Check definition
@@ -216,7 +216,7 @@ spec:
   subscriptions:
   - postgres
   runtime_assets:
-  - scottcupit/sensu-go-postgres
+  - elfranne/sensu-go-postgres
 ```
 
 ## Installation from source
