@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	corev2 "github.com/sensu/sensu-go/api/core/v2"
+	corev2 "github.com/sensu/core/v2"
 	"github.com/sensu/sensu-plugin-sdk/sensu"
 
 	"golang.org/x/text/cases"
@@ -230,7 +230,7 @@ func executeCheck(event *corev2.Event) (int, error) {
 
 	metric_count := printMetrics(hostname + ".postgresql.")
 	if metric_count == 0 {
-		return sensu.CheckStateWarning, fmt.Errorf("No metrics found")
+		return sensu.CheckStateWarning, fmt.Errorf("no metrics found")
 	}
 
 	return sensu.CheckStateOK, nil
