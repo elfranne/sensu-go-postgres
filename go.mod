@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	github.com/sensu/core/v2 v2.20.0
 	github.com/sensu/sensu-plugin-sdk v0.19.0
-	golang.org/x/text v0.24.0
+	golang.org/x/text v0.33.0
 )
 
 require (
