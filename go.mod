@@ -1,11 +1,11 @@
 module github.com/elfranne/sensu-go-postgres
 
-go 1.24.2
+go 1.26.0
 
 require (
-	github.com/sensu/core/v2 v2.20.0
+	github.com/sensu/core/v2 v2.21.0
 	github.com/sensu/sensu-plugin-sdk v0.19.0
-	golang.org/x/text v0.24.0
+	golang.org/x/text v0.34.0
 )
 
 require (
@@ -14,9 +14,9 @@ require (
 	github.com/echlebek/timeproxy v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -36,13 +36,13 @@ require (
 	github.com/spf13/viper v1.7.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/grpc v1.59.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
